@@ -1,9 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-import './VotingDappDeployer.sol';
-// Uncomment this line to use console.log
-// import "hardhat/console.sol";
+import './VotingStage.sol';
+
+contract VotingDappDeployer {
+
+    constructor() {}
+
+   
+    function deploy(address firstC, address secondC, address thirdParty) internal returns(address stage) {
+        stage = address(new VotingStage(firstC, secondC, thirdParty));
+
+    }
+
+
+}
 
 contract VotingDappFactory is VotingDappDeployer {
    // this will keep track of the total amount of times people have created votes. 
@@ -12,26 +23,37 @@ contract VotingDappFactory is VotingDappDeployer {
    uint public cost;
 
 
+   mapping(address => mapping(address => address)) public canidateAddress;
+   mapping(address => address) public canidateHistory;
+   mapping(uint => address) public votingHistory;
+
+   
    constructor() {
       studio = msg.sender; 
       cost = 0.5 ether;
+      totalRounds = 0;
    }
-
-
-   mapping(address => mapping(address => address)) canidateAddress;
-   // mapping(address => address) canidateHistory;
-
 
    function createVote(
       address _firstC, 
-      address _secondC
+      address _secondC,
+      address _thirdParty
    ) payable public returns (address vote) {
+      totalRounds++; 
       require(msg.value >= cost, 'Sorry you dont have enough ether');
 
-      totalRounds++; 
-      vote = deploy(_firstC, _secondC);
+      vote = deploy(_firstC, _secondC, _thirdParty);
+      canidateHistory[_firstC] = vote;
+      canidateHistory[_secondC] = vote;
+
+      votingHistory[totalRounds] = vote;
 
 
    }
 
+// * receive function
+    receive() external payable {}
+
+    // * fallback function
+    fallback() external payable {}
 }
